@@ -50,7 +50,7 @@ module.exports = exports = (app, pool) => {
       if (error) {
         return res.status(400).send({
           success: false,
-          data: null,
+          data: error,
         });
       } else {
         return res.status(201).send({
@@ -65,10 +65,10 @@ module.exports = exports = (app, pool) => {
 
   app.put("/api/news/:id", (req, res) => {
     const { id } = req.params;
-    const { thumbnail, headline, main } = req.body;
+    const { thumbnail, headline, isi_berita } = req.body;
 
     const query = `update m_news set headline = '${headline}',
-                    thumbnail = '${thumbnail}', isi_berita = '${main}' where id = ${id};`;
+                    thumbnail = '${thumbnail}', isi_berita = '${isi_berita}' where id = ${id};`;
     console.log(query);
     pool.query(query, (error, result) => {
       if (error) {

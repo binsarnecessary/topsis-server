@@ -115,7 +115,7 @@ module.exports = exports = (app, pool) => {
 
   //--------------------------- TOPSIS METHOD -------------------------
   app.post("/api/decision", (req, res) => {
-    const { listDecision } = req.body;
+    const { listDecision, name, guest_id } = req.body;
 
     var detailQuery = "";
     listDecision.forEach((data) => {
@@ -125,6 +125,9 @@ module.exports = exports = (app, pool) => {
 
     const advancedQuery = `insert into m_decision (point, criteria_id, guest_id)
             values ${detailQuery}`;
+    const biodataQuery = `insert into m_biodata (guest_id, name, created_at)
+          values (${guest_id}, '${name}', now())`;
+    pool.query(biodataQuery);
 
     pool.query(advancedQuery, (error, result) => {
       if (error) {
@@ -162,4 +165,26 @@ module.exports = exports = (app, pool) => {
       }
     });
   });
+
+  // app.delete("/api/decision/:id", (req, res) => {
+  //   const { id } = req.params;
+
+  //   const query = `delete from m_decision where guest_id = ${id}`;
+
+  //   pool.query(query, (error, result) => {
+  //     if (error) {
+  //       return res.status(400).send({
+  //         success: false,
+  //         data: error,
+  //       });
+  //     } else {
+  //       return res.status(200).send({
+  //         success: true,
+  //         status_code: 200,
+  //         message: "Data Has Been Delete",
+  //         data: null,
+  //       });
+  //     }
+  //   });
+  // });
 };

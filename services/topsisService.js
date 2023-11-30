@@ -98,12 +98,13 @@ module.exports = exports = (app, pool) => {
       const topsisData = [];
 
       for (let i = 1; i <= loop; i++) {
-        const query = `SELECT md.point, ma.id as guest_id, mc.attribut
-          FROM m_alternative ma
-          JOIN m_criteria mc ON ma.id = mc.alternative_id
-          JOIN m_decision md ON md.criteria_id = mc.id
-          WHERE md.guest_id = ${i}
-          ORDER BY md.id`;
+        const query = `SELECT md.point, ma.id as guest_id, mc.attribut, mb.name, mb.created_at
+        FROM m_alternative ma
+        JOIN m_criteria mc ON ma.id = mc.alternative_id
+        JOIN m_decision md ON md.criteria_id = mc.id
+        left join m_biodata mb on mb.guest_id = md.guest_id
+        WHERE md.guest_id = ${i}
+        ORDER BY md.id`;
 
         pool.query(query, (error, result) => {
           if (error) {
@@ -112,6 +113,20 @@ module.exports = exports = (app, pool) => {
               data: error,
             });
           }
+
+          const name = result.rows[0].name;
+          const createdAt = result.rows[0].created_at;
+          const createdAtDate = new Date(createdAt);
+
+          const formattedDate = createdAtDate.toLocaleString("en-US", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+            hour: "numeric",
+            minute: "numeric",
+            second: "numeric",
+            timeZone: "UTC",
+          });
 
           const decision = result.rows;
           const type = [];
@@ -161,6 +176,8 @@ module.exports = exports = (app, pool) => {
 
             topsisData.push({
               guest_id: i,
+              createdAt: formattedDate,
+              name: name,
               topsis_id: resultTopsis[0].id,
               topsis_score: Number(resultTopsis[0].topsisScore.toFixed(4)),
               nameTopsis: nameTopsis, // Ambil skor TOPSIS pertama (tertinggi)
@@ -184,12 +201,14 @@ module.exports = exports = (app, pool) => {
     const { guestId } = req.params;
     var decision;
 
-    const query = `select md.point, ma.id, mc.attribut
+    const query = `select md.point, ma.id, mc.attribut, mb.name
                         from m_alternative ma
                         join m_criteria mc
                         on ma.id = mc.alternative_id
                         join m_decision md 
                         on md.criteria_id = mc.id
+                        left join m_biodata mb
+                        on mb.guest_id = md.guest_id
                         where md.guest_id = ${guestId}
                         order by md.id`;
     pool.query(query, (error, result) => {
@@ -200,6 +219,7 @@ module.exports = exports = (app, pool) => {
         });
       }
 
+      const name = result.rows[0].name
       var getData = result.rowCount;
       if (getData === 0) {
         return res.status(200).send({
@@ -241,12 +261,12 @@ module.exports = exports = (app, pool) => {
       );
       const topsisScores = resultTopsis.topsisScores;
       const normalizedBobot = resultTopsis.normalizedBobot;
-      const Ap = resultTopsis.Apositif
-      const An = resultTopsis.Anegatif
-      const distanceToAp = resultTopsis.distanceToAp
-      const distanceToAn = resultTopsis.distanceToAn
-        // console.log(Ap)
-        // console.log(An)
+      const Ap = resultTopsis.Apositif;
+      const An = resultTopsis.Anegatif;
+      const distanceToAp = resultTopsis.distanceToAp;
+      const distanceToAn = resultTopsis.distanceToAn;
+      // console.log(Ap)
+      // console.log(An)
 
       const getNameTopsis = `select name from m_alternative`;
 
@@ -276,7 +296,8 @@ module.exports = exports = (app, pool) => {
             distanceToAp: distanceToAp,
             distanceToAn: distanceToAn,
             topsisScores: topsisScores,
-            finalResult: finalResult
+            finalResult: finalResult,
+            name: name
           },
         });
       });
@@ -432,12 +453,12 @@ module.exports = exports = (app, pool) => {
     const distanceToAp = [];
     const distanceToAn = [];
     for (let i = 0; i < n; i++) {
-      normalizedBobot[i] = []
+      normalizedBobot[i] = [];
       let sumDistanceToAp = 0;
       let sumDistanceToAn = 0;
       for (let j = 0; j < m; j++) {
         const weightedValue = Number((matrix[i][j] * weights[j]).toFixed(4)); // Menerapkan bobot pada nilai ternormalisasi
-        normalizedBobot[i][j] = weightedValue
+        normalizedBobot[i][j] = weightedValue;
         sumDistanceToAp += (Ap[j] - weightedValue) ** 2;
         sumDistanceToAn += (weightedValue - An[j]) ** 2;
       }
@@ -460,7 +481,7 @@ module.exports = exports = (app, pool) => {
       Apositif: Ap,
       Anegatif: An,
       distanceToAp: distanceToAp,
-      distanceToAn: distanceToAn
+      distanceToAn: distanceToAn,
     };
   }
 };

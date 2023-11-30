@@ -35,7 +35,7 @@ module.exports = exports = (app, pool) => {
           success: true,
           status_code: 200,
           message: "Data Found",
-          data: result.rows,
+          data: result.rows[0],
         });
       }
     });
