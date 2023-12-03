@@ -117,32 +117,49 @@ module.exports = exports = (app, pool) => {
   app.post("/api/decision", (req, res) => {
     const { listDecision, name, guest_id } = req.body;
 
-    var detailQuery = "";
-    listDecision.forEach((data) => {
-      detailQuery += detailQuery.length > 0 ? "," : "";
-      detailQuery += `(${data.point}, ${data.criteria_id}, ${data.guest_id})`;
-    });
-
-    const advancedQuery = `insert into m_decision (point, criteria_id, guest_id)
-            values ${detailQuery}`;
-    const biodataQuery = `insert into m_biodata (guest_id, name, created_at)
-          values (${guest_id}, '${name}', now())`;
-    pool.query(biodataQuery);
-
-    pool.query(advancedQuery, (error, result) => {
+    const updateGuest = `select * from m_biodata where guest_id = ${guest_id}`;
+    pool.query(updateGuest, (error, result) => {
       if (error) {
         return res.status(400).send({
-          success: false,
-          data: error,
-        });
-      } else {
-        return res.status(200).send({
-          success: true,
-          status_code: 200,
-          message: "Success send Answer",
+          message: error,
           data: null,
         });
       }
+
+      var newId = guest_id;
+
+      const alreadyExist = result.rowCount;
+      if (alreadyExist > 0) {
+        newId = Number(result.rows[0].guest_id) + 1;
+      }
+      var detailQuery = "";
+      listDecision.forEach((data) => {
+        detailQuery += detailQuery.length > 0 ? "," : "";
+        detailQuery += `(${data.point}, ${data.criteria_id}, ${newId})`;
+      });
+
+      const advancedQuery = `insert into m_decision (point, criteria_id, guest_id)
+            values ${detailQuery}`;
+
+      const biodataQuery = `insert into m_biodata (guest_id, name, created_at)
+          values (${newId}, '${name}', now())`;
+      pool.query(biodataQuery);
+
+      pool.query(advancedQuery, (error, result) => {
+        if (error) {
+          return res.status(400).send({
+            success: false,
+            data: error,
+          });
+        } else {
+          return res.status(200).send({
+            success: true,
+            status_code: 200,
+            message: "Success send Answer",
+            data: null,
+          });
+        }
+      });
     });
   });
 

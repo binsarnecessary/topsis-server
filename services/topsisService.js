@@ -129,6 +129,7 @@ module.exports = exports = (app, pool) => {
           });
 
           const decision = result.rows;
+          console.log("🚀 ~ file: topsisService.js:132 ~ pool.query ~ decision:", decision[1])
           const type = [];
           for (let i = 0; i < 5; i++) {
             type[i] = decision[i].attribut;
@@ -219,7 +220,7 @@ module.exports = exports = (app, pool) => {
         });
       }
 
-      const name = result.rows[0].name
+      const name = result.rows[0]?.name || "";
       var getData = result.rowCount;
       if (getData === 0) {
         return res.status(200).send({
@@ -297,7 +298,7 @@ module.exports = exports = (app, pool) => {
             distanceToAn: distanceToAn,
             topsisScores: topsisScores,
             finalResult: finalResult,
-            name: name
+            name: name,
           },
         });
       });
