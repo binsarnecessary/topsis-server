@@ -129,7 +129,6 @@ module.exports = exports = (app, pool) => {
           });
 
           const decision = result.rows;
-          console.log("🚀 ~ file: topsisService.js:132 ~ pool.query ~ decision:", decision[1])
           const type = [];
           for (let i = 0; i < 5; i++) {
             type[i] = decision[i].attribut;
